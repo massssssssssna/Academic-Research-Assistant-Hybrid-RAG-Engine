@@ -1,0 +1,102 @@
+[
+  {
+    "query": "What is a Large Language Model and how does it work?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from Large Language Models PDF — core definition and architecture overview."
+  },
+  {
+    "query": "What is the transformer architecture and why is it central to LLMs?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from Large Language Models PDF — transformer architecture section."
+  },
+  {
+    "query": "What is the difference between pre-training and inference in large language models?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from Large Language Models PDF — pre-training vs inference explanation."
+  },
+  {
+    "query": "What are the main limitations and challenges of large language models?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from Large Language Models PDF — limitations section such as hallucination, bias, compute cost."
+  },
+  {
+    "query": "What is prompt engineering and how does it influence LLM outputs?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from Large Language Models PDF — prompting techniques and their effect on model behavior."
+  },
+  {
+    "query": "What is Retrieval-Augmented Generation (RAG) and why was it introduced?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from RAG PDF — core definition and motivation for RAG."
+  },
+  {
+    "query": "How does the retrieval component in RAG work to find relevant documents?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from RAG PDF — retrieval mechanism, dense retrieval, vector similarity."
+  },
+  {
+    "query": "What is the role of a vector database in a RAG pipeline?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from RAG PDF — vector stores, indexing, and similarity search."
+  },
+  {
+    "query": "What is chunking in RAG and how does chunk size affect retrieval quality?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from RAG PDF — document chunking strategies and their impact on retrieval."
+  },
+  {
+    "query": "What is the difference between dense retrieval and sparse retrieval in RAG?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from RAG PDF — dense vs sparse (BM25) retrieval comparison."
+  },
+  {
+    "query": "What is hybrid retrieval and how does Reciprocal Rank Fusion (RRF) work?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from RAG PDF — hybrid retrieval combining dense and sparse methods with RRF fusion."
+  },
+  {
+    "query": "What are the main evaluation metrics used to assess RAG system performance?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from RAG PDF — metrics such as Precision@K, Recall@K, MRR, nDCG, Hit Rate."
+  },
+  {
+    "query": "What is an AI agent and how is it different from a standard LLM?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from AI Agents PDF — core definition and distinction between agents and plain LLMs."
+  },
+  {
+    "query": "What is the ReAct framework and how do AI agents use reasoning and acting together?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from AI Agents PDF — ReAct (Reasoning + Acting) paradigm explained."
+  },
+  {
+    "query": "What tools and external resources can AI agents access to complete tasks?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from AI Agents PDF — tool use, function calling, web search, code execution."
+  },
+  {
+    "query": "What are multi-agent systems and what are their advantages over single agents?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from AI Agents PDF — multi-agent collaboration, orchestration, and benefits."
+  },
+  {
+    "query": "What is fine-tuning and when should it be used instead of prompting?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from Fine-Tuning and PEFT PDF — definition of fine-tuning and when it is preferred."
+  },
+  {
+    "query": "What is Parameter-Efficient Fine-Tuning (PEFT) and why is it important?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from Fine-Tuning and PEFT PDF — PEFT overview, motivation, and efficiency gains."
+  },
+  {
+    "query": "What is LoRA and how does it reduce the number of trainable parameters?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from Fine-Tuning and PEFT PDF — Low-Rank Adaptation (LoRA) technique explained."
+  },
+  {
+    "query": "What is the difference between full fine-tuning, LoRA, and QLoRA?",
+    "relevant_chunk_ids": [],
+    "notes": "Answer should come from Fine-Tuning and PEFT PDF — comparison of full fine-tuning, LoRA, and quantized LoRA (QLoRA)."
+  }
+]
