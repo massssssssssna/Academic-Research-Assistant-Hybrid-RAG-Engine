@@ -116,16 +116,17 @@ class Config:
         valid_modes = {"dense", "hybrid", "hybrid_rerank"}
         if cls.RETRIEVAL_MODE not in valid_modes:
             print(f"❌ Invalid RETRIEVAL_MODE '{cls.RETRIEVAL_MODE}'. Must be one of: {valid_modes}")
-            sys.exit(1)
+            # Do not exit, just default to dense
+            cls.RETRIEVAL_MODE = "dense"
 
         if missing:
             print(f"❌ Missing critical credentials: {', '.join(missing)}")
-            sys.exit(1)
+            # On Vercel, exiting here crashes the whole serverless function with 500.
+            # We just print the error and let the specific API routes fail gracefully.
 
         print(f"✅ Config loaded | mode={cls.RETRIEVAL_MODE} | top_k={cls.TOP_K} | "
               f"chunk_size={cls.CHUNK_SIZE} | overlap={cls.CHUNK_OVERLAP} | "
               f"eval={cls.EVALUATION_MODE}")
-
 
 # Validate as soon as config is imported so failures surface early.
 Config.validate()
