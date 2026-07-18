@@ -48,7 +48,8 @@ def _initialize_engines():
     # 1. Load spaCy (required for claim extraction)
     try:
         import spacy
-        _nlp = spacy.load("en_core_web_sm")
+        import en_core_web_sm
+        _nlp = en_core_web_sm.load()
         logger.info("✅ spaCy (en_core_web_sm) loaded successfully for evaluation.")
     except Exception as e:
         logger.warning(f"⚠️ spaCy loading failed: {e}. Falling back to regex-based splitter.")
