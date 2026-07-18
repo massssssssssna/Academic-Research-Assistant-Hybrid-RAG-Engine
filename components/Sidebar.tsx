@@ -1,8 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // components/Sidebar.tsx
-// Left navigation panel showing the list of chat sessions.
-// Contains: logo, "New Session" button, scrollable session cards, Qdrant badge.
-// NOTE: Uses ONLY custom CSS classes from globals.css — no Tailwind utilities.
+// Left navigation panel.
+// Contains: logo, "New Session" button, session list, Eval Test Suite button.
+// PDF upload and Re-Index removed — knowledge base is pre-indexed.
 // ─────────────────────────────────────────────────────────────────────────────
 
 "use client";
@@ -11,13 +11,12 @@ import type { ChatSession } from "@/types";
 import { formatDate, truncate } from "@/lib/utils";
 
 interface SidebarProps {
-  sessions: ChatSession[];
+  sessions:        ChatSession[];
   activeSessionId: string | null;
-  onSelect: (id: string) => void;
-  onNew: () => void;
-  onDelete: (id: string) => void;
-  onReindex: () => void;
-  isIndexing: boolean;
+  onSelect:        (id: string) => void;
+  onNew:           () => void;
+  onDelete:        (id: string) => void;
+  onOpenTestPanel: () => void;
 }
 
 export default function Sidebar({
@@ -26,12 +25,11 @@ export default function Sidebar({
   onSelect,
   onNew,
   onDelete,
-  onReindex,
-  isIndexing
+  onOpenTestPanel,
 }: SidebarProps) {
   return (
     <aside className="sidebar" role="navigation" aria-label="Chat sessions">
-      {/* ── Logo ─────────────────────────────────────────────────────────── */}
+      {/* ── Logo ──────────────────────────────────────────────────────── */}
       <div className="sidebar-logo">
         <div className="logo-icon-wrap">⚛</div>
         <div className="logo-text-wrap">
@@ -40,7 +38,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* ── New Session button ──────────────────────────────────────────── */}
+      {/* ── New Session ───────────────────────────────────────────────── */}
       <button
         id="new-session-btn"
         className="new-session-btn"
@@ -51,12 +49,15 @@ export default function Sidebar({
         New Session
       </button>
 
-      {/* ── Session list heading ────────────────────────────────────────── */}
-      <div className="sessions-heading" aria-hidden="true">
-        RECENT SESSIONS
+      {/* ── Knowledge Base Status Badge ───────────────────────────────── */}
+      <div className="sidebar-kb-status">
+        <span className="sidebar-kb-dot" />
+        <span className="sidebar-kb-label">Knowledge Base Indexed</span>
       </div>
 
-      {/* ── Scrollable session cards ─────────────────────────────────────── */}
+      {/* ── Session list ──────────────────────────────────────────────── */}
+      <div className="sessions-heading" aria-hidden="true">RECENT SESSIONS</div>
+
       <div className="sessions-scroll" role="list">
         {sessions.length === 0 ? (
           <p className="no-sessions-msg">No sessions yet — start one above!</p>
@@ -71,32 +72,17 @@ export default function Sidebar({
               aria-current={activeSessionId === session.id ? "page" : undefined}
               onKeyDown={(e) => e.key === "Enter" && onSelect(session.id)}
             >
-              {/* Title row + delete button */}
               <div className="session-card-header">
-                <span className="session-card-title">
-                  {truncate(session.title, 26)}
-                </span>
+                <span className="session-card-title">{truncate(session.title, 26)}</span>
                 <button
                   className="session-delete-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(session.id);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); onDelete(session.id); }}
                   aria-label={`Delete session: ${session.title}`}
                   title="Delete session"
                 >
                   ×
                 </button>
               </div>
-
-              {/* PDF badge — only shown when a PDF is indexed */}
-              {session.pdfName && (
-                <span className="session-pdf-badge">
-                  📄 {truncate(session.pdfName, 22)}
-                </span>
-              )}
-
-              {/* Metadata row */}
               <div className="session-meta-row">
                 <span className="session-date">{formatDate(session.updatedAt)}</span>
                 <span className="session-msg-count">
@@ -108,43 +94,20 @@ export default function Sidebar({
         )}
       </div>
 
-      {/* ── Re-Index Button ────────────────────────────────────────────────── */}
-      <div className="sidebar-reindex-wrap">
+      {/* ── Eval Test Suite ───────────────────────────────────────────── */}
+      <div className="sidebar-test-wrap">
         <button
-          id="reindex-btn"
-          className={isIndexing ? "sidebar-reindex-btn sidebar-reindex-btn--busy" : "sidebar-reindex-btn"}
-          onClick={onReindex}
-          disabled={isIndexing}
-          aria-label="Initialize or re-index data"
+          id="open-test-panel-btn"
+          className="sidebar-test-btn"
+          onClick={onOpenTestPanel}
+          aria-label="Open evaluation test suite"
         >
-          {isIndexing ? (
-            <>
-              <span className="sidebar-reindex-spinner" aria-hidden="true" />
-              Indexing…
-            </>
-          ) : (
-            <>
-              <svg
-                className="sidebar-reindex-icon"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              Initialize / Re-Index Data
-            </>
-          )}
+          <span className="sidebar-test-icon">🧪</span>
+          Eval Test Suite
         </button>
       </div>
 
-      {/* ── Footer: Qdrant connection badge ───────────────────────────── */}
+      {/* ── Footer: Qdrant badge ───────────────────────────────────────── */}
       <div className="sidebar-qdrant-wrap">
         <div className="sidebar-qdrant-badge">
           <span aria-hidden="true">🔷</span>

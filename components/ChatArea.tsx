@@ -1,10 +1,8 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // components/ChatArea.tsx
 // The main center content: scrollable messages viewport + fixed bottom input bar.
-// Decides what to render based on session/PDF/indexing state:
-//   1. No PDF & no messages → EmptyState (dropzone)
-//   2. isIndexing & no messages → EmptyState (indexing spinner)
-//   3. Has messages → message list + optional loading bubbles
+// Knowledge base is pre-indexed — no PDF upload or EmptyState dropzone.
+// Shows a "Ready" welcome state when there are no messages yet.
 // ─────────────────────────────────────────────────────────────────────────────
 
 "use client";
@@ -12,18 +10,15 @@
 import { useEffect, useRef } from "react";
 import type { ChatSession } from "@/types";
 import MessageBubble from "./MessageBubble";
-import EmptyState from "./EmptyState";
 import LoadingBubble from "./LoadingBubble";
 
 interface ChatAreaProps {
-  session: ChatSession | null;
-  inputValue: string;
+  session:       ChatSession | null;
+  inputValue:    string;
   onInputChange: (value: string) => void;
-  onSend: () => void;
-  onFileSelect: (file: File) => void;
-  isLoading: boolean;
-  isIndexing: boolean;
-  topK: number;
+  onSend:        () => void;
+  isLoading:     boolean;
+  topK:          number;
 }
 
 export default function ChatArea({
@@ -31,24 +26,20 @@ export default function ChatArea({
   inputValue,
   onInputChange,
   onSend,
-  onFileSelect,
   isLoading,
-  isIndexing,
   topK,
 }: ChatAreaProps) {
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
 
-  // Derived state
   const hasMessages = (session?.messages?.length ?? 0) > 0;
-  const showDropzone = !isIndexing && !hasMessages;
-  const showIndexingSpinner = isIndexing && !hasMessages;
 
-  // ── Auto-scroll to bottom whenever messages update ─────────────────────
+  // ── Auto-scroll to bottom whenever messages update ────────────────────
   useEffect(() => {
     bottomAnchorRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [session?.messages, isLoading, isIndexing]);
+  }, [session?.messages, isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Keyboard: Enter sends, Shift+Enter inserts newline ─────────────────
+
+  // ── Keyboard: Enter sends, Shift+Enter inserts newline ────────────────
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -58,7 +49,7 @@ export default function ChatArea({
 
   return (
     <div className="chat-area flex-1 flex flex-col relative h-full">
-      {/* ── Active Model Header ────────────────────────────────────────── */}
+      {/* ── Active Model Badge ────────────────────────────────────────── */}
       {hasMessages && (
         <div className="absolute top-0 left-0 right-0 z-10 flex justify-center py-2 bg-gradient-to-b from-[#111214] to-transparent pointer-events-none">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e1f22]/90 border border-white/10 rounded-full backdrop-blur-sm shadow-sm pointer-events-auto">
@@ -70,62 +61,62 @@ export default function ChatArea({
         </div>
       )}
 
-      {/* ── Messages viewport ──────────────────────────────────────────── */}
+      {/* ── Messages viewport ─────────────────────────────────────────── */}
       <div className="messages-viewport flex-1 overflow-y-auto">
-        {showDropzone ? (
-          // Case 1: No PDF yet — show the drag-and-drop zone
-          <EmptyState onFileSelect={onFileSelect} isIndexing={false} />
-        ) : showIndexingSpinner ? (
-          // Case 2: PDF chosen, indexing in progress (no messages yet)
-          <EmptyState onFileSelect={onFileSelect} isIndexing={true} />
+        {!hasMessages ? (
+          /* Welcome / Ready state — knowledge base is pre-indexed */
+          <div className="eval-welcome">
+            <div className="eval-welcome-icon">🔬</div>
+            <h2 className="eval-welcome-title">Research Assistant Ready</h2>
+            <p className="eval-welcome-sub">
+              Knowledge base is indexed and active. Ask any research question below.
+              <br />
+              Every response includes a <strong>Generation Evaluation Report</strong> with
+              faithfulness, hallucination detection, and latency metrics.
+            </p>
+            <div className="eval-welcome-chips">
+              <span className="eval-welcome-chip">📊 Faithfulness Score</span>
+              <span className="eval-welcome-chip">🔍 Hallucination Detection</span>
+              <span className="eval-welcome-chip">✅ Claim Verification</span>
+              <span className="eval-welcome-chip">⚡ Latency Breakdown</span>
+            </div>
+          </div>
         ) : (
-          // Case 3: Messages exist — render chat bubbles
           <>
             {session?.messages.map((msg) => (
               <MessageBubble key={msg.id} message={msg} />
             ))}
 
-            {/* Indexing bubble: shown when replacing a PDF on a session that already has messages */}
-            {isIndexing && (
-              <LoadingBubble text="Indexing into Qdrant Cloud…" />
-            )}
-
-            {/* RAG loading bubble: shown while waiting for LLM response */}
+            {/* RAG loading bubble */}
             {isLoading && (
               <LoadingBubble text="Searching Qdrant & Synthesizing response…" />
             )}
 
-            {/* Invisible anchor div for auto-scroll */}
             <div ref={bottomAnchorRef} aria-hidden="true" />
           </>
         )}
       </div>
 
-      {/* ── Fixed bottom input bar ──────────────────────────────────────── */}
+      {/* ── Fixed bottom input bar ───────────────────────────────────── */}
       <div className="input-bar">
         <div className="input-wrapper">
           <textarea
             id="chat-input"
             className="chat-textarea"
-            placeholder={
-              isIndexing
-                ? "Indexing documents…"
-                : "Ask a research question…  (Enter ↵ to send, Shift+Enter for new line)"
-            }
+            placeholder="Ask a research question…  (Enter ↵ to send, Shift+Enter for new line)"
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={handleKeyDown}
-            disabled={isLoading || isIndexing}
+            disabled={isLoading}
             rows={1}
             aria-label="Chat input"
           />
 
-          {/* Send button */}
           <button
             id="send-message-btn"
             className="send-btn"
             onClick={onSend}
-            disabled={!inputValue.trim() || isLoading || isIndexing}
+            disabled={!inputValue.trim() || isLoading}
             aria-label="Send message"
             title="Send (Enter)"
           >
@@ -146,9 +137,8 @@ export default function ChatArea({
           </button>
         </div>
 
-        {/* Context hint below the input */}
         <p className="input-hint" aria-live="polite">
-          Powered by Qdrant + Groq (Llama-3) · Index your data via the sidebar first
+          Powered by Qdrant · Groq (Llama-3) · Generation Evaluation runs automatically after every response
         </p>
       </div>
     </div>

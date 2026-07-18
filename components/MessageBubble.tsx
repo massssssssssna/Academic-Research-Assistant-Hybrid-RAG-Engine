@@ -1,14 +1,16 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // components/MessageBubble.tsx
 // Renders a single chat message in one of two layouts:
-//   • User   → right-aligned, purple-tinted bubble with border
+//   • User      → right-aligned, purple-tinted bubble with border
 //   • Assistant → left-aligned, dark bubble with "AI" gradient avatar badge
 //               + optional SourcesExpander when message.source is present
+//               + optional EvalDashboard when message.evaluation is present (NEW)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { Message } from "@/types";
 import { formatTime, markdownToHtml } from "@/lib/utils";
 import SourcesExpander from "./SourcesExpander";
+import EvalDashboard from "./EvalDashboard";  // NEW
 
 interface MessageBubbleProps {
   message: Message;
@@ -39,7 +41,7 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         AI
       </div>
 
-      {/* Message content + optional sources expander */}
+      {/* Message content + optional sources expander + optional eval dashboard */}
       <div className="assistant-group">
         <div className="bubble assistant-bubble">
           <p
@@ -54,6 +56,11 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         {/* RAG Citations: only render when source array is present and non-empty */}
         {message.source && message.source.length > 0 && (
           <SourcesExpander sources={message.source} />
+        )}
+
+        {/* NEW: Generation Evaluation Dashboard — renders below assistant bubble */}
+        {message.evaluation && (
+          <EvalDashboard evaluation={message.evaluation} />
         )}
       </div>
     </div>

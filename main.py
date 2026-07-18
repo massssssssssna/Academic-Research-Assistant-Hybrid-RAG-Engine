@@ -3,12 +3,13 @@ main.py — Academic RAG Chatbot API (Evaluation-Ready)
 
 FastAPI backend that serves the Academic Research Assistant frontend.
 This version supports configurable retrieval modes (dense / hybrid / hybrid_rerank),
-evaluation logging, and fully configurable hyperparameters via config.py.
+evaluation logging, fully configurable hyperparameters via config.py, and
+real-time Generation Evaluation via generation_evaluator.py.
 
 Endpoints (UNCHANGED from original):
     POST /api/ingest   — returns current chunk count in Qdrant
     POST /api/upload   — accepts a PDF file and indexes it in the background
-    POST /api/chat     — accepts a query + chat history, returns an answer
+    POST /api/chat     — accepts a query + chat history, returns an answer + evaluation
     POST /api/ask      — alias for /api/chat
 
 Configuration (all via .env or environment variables):
@@ -23,7 +24,7 @@ Configuration (all via .env or environment variables):
 import os
 import time
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,6 +39,8 @@ from config import Config
 from data_ingestion import process_and_index_pdf
 from retrieval import retrieve, fallback_scroll
 from evaluation import log_query
+# NEW: Generation Evaluation module — runs after every LLM response
+from generation_evaluator import evaluate_response
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -91,11 +94,15 @@ class ChatResponse(BaseModel):
     Outgoing chat response to the frontend.
 
     Fields:
-        status:  "success" or "error".
-        answer:  The LLM-generated answer string.
+        status:     "success" or "error".
+        answer:     The LLM-generated answer string.
+        evaluation: Optional generation evaluation report with quality metrics.
+                    Contains faithfulness, hallucination, claims, latency, etc.
+                    None when evaluation could not be computed.
     """
     status: str = "success"
     answer: str
+    evaluation: Optional[Dict[str, Any]] = None   # NEW: Generation Evaluation report
 
 
 class IngestRequest(BaseModel):
@@ -199,9 +206,10 @@ async def chat_endpoint(req: ChatRequest):
         is_summary   = any(k in query.lower() for k in summary_kw)
         is_reference = any(k in query.lower() for k in reference_kw)
 
-        # ── Step 3: Retrieval ─────────────────────────────────────────────────
-        retrieval_results = []
+        # ── Step 3: Retrieval ───────────────────────────────────────────────
+        retrieval_results    = []
         retrieval_latency_ms = 0.0
+        reranking_latency_ms = 0.0  # NEW: isolated reranker timing
 
         if is_summary:
             # Summary: fetch first 6 chunks (document beginning = abstract/intro)
@@ -272,13 +280,18 @@ async def chat_endpoint(req: ChatRequest):
                     mode=Config.RETRIEVAL_MODE,
                 )
                 retrieval_results    = retrieval_output["results"]
-                retrieval_latency_ms = retrieval_output["latency_ms"]
+                # NEW: retrieval latency now excludes reranking time
+                # retrieve() returns total latency; reranking is extracted separately below
+                retrieval_latency_ms = retrieval_output.get("retrieval_only_ms",
+                                       retrieval_output["latency_ms"])
+                reranking_latency_ms = retrieval_output.get("reranking_ms", 0.0)
             except Exception as e:
                 # If retrieval fails entirely, fall back to scrolling first few chunks
                 logger.error(f"Retrieval failed: {e}. Using fallback scroll.")
                 t0 = time.perf_counter()
                 retrieval_results    = fallback_scroll(qdrant_client, limit=5)
                 retrieval_latency_ms = (time.perf_counter() - t0) * 1000
+                reranking_latency_ms = 0.0
 
         # ── Step 4: Assemble Document Context ─────────────────────────────────
         context_blocks = []
@@ -341,7 +354,7 @@ async def chat_endpoint(req: ChatRequest):
         generation_latency_ms = (time.perf_counter() - gen_t0) * 1000
         logger.info(f"LLM responded in {generation_latency_ms:.1f}ms")
 
-        # ── Step 8: Evaluation Logging ─────────────────────────────────────────
+        # ── Step 8: Evaluation Logging (CSV) ───────────────────────────────────
         # This is a no-op when Config.EVALUATION_MODE is False.
         # When True, appends a row to evaluation/{mode}_log.csv.
         log_query(
@@ -351,7 +364,20 @@ async def chat_endpoint(req: ChatRequest):
             generation_latency_ms=generation_latency_ms,
         )
 
-        return ChatResponse(answer=llm_response.content)
+        # ── Step 9: Generation Evaluation ──────────────────────────────────────
+        # Runs post-generation. Computes faithfulness, hallucination, claims,
+        # context utilization, answer relevancy, and latency metrics.
+        # Uses try/except internally so it NEVER crashes the chat endpoint.
+        eval_report = evaluate_response(
+            query=query,
+            answer=llm_response.content,
+            retrieved_chunks=retrieval_results,
+            retrieval_latency_ms=retrieval_latency_ms,
+            reranking_latency_ms=reranking_latency_ms,
+            generation_latency_ms=generation_latency_ms,
+        )
+
+        return ChatResponse(answer=llm_response.content, evaluation=eval_report)
 
     except Exception as e:
         logger.error(f"Chat endpoint fatal error: {e}", exc_info=True)

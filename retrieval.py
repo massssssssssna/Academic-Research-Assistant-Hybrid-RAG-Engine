@@ -243,6 +243,7 @@ def retrieve(
     t0 = time.perf_counter()
 
     results: List[Dict[str, Any]] = []
+    reranking_ms = 0.0
 
     # ── Dense Mode ──────────────────────────────────────────────────────────
     if effective_mode == "dense":
@@ -266,9 +267,13 @@ def retrieve(
         bm25_results  = _bm25_search(corpus, query, pool_size)
         candidates    = _reciprocal_rank_fusion([dense_results, bm25_results], pool_size)
 
+        # Measure reranking latency separately so the dashboard can show it
+        rerank_t0 = time.perf_counter()
         # Step 2: Rerank with CrossEncoder → trim to top_k
         # reranker.py has graceful fallback if neural backend unavailable
         results = cross_encoder_rerank(query, candidates, top_k=effective_top_k)
+        reranking_ms = (time.perf_counter() - rerank_t0) * 1000
+        logger.info(f"Reranking took {reranking_ms:.1f}ms")
 
     else:
         raise ValueError(
@@ -279,11 +284,16 @@ def retrieve(
     latency_ms = (time.perf_counter() - t0) * 1000
     logger.info(f"Retrieval complete | {len(results)} results | {latency_ms:.1f}ms")
 
+    # retrieval_only_ms excludes reranking so each stage can be displayed separately
+    retrieval_only_ms = latency_ms - reranking_ms if effective_mode == "hybrid_rerank" else latency_ms
+
     return {
-        "results":        results,
-        "retrieval_mode": effective_mode,
-        "top_k":          effective_top_k,
-        "latency_ms":     round(latency_ms, 2),
+        "results":           results,
+        "retrieval_mode":    effective_mode,
+        "top_k":             effective_top_k,
+        "latency_ms":        round(latency_ms, 2),
+        "retrieval_only_ms": round(max(retrieval_only_ms, 0.0), 2),
+        "reranking_ms":      round(reranking_ms, 2),
     }
 
 

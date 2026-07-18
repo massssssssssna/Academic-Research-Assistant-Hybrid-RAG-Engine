@@ -8,8 +8,6 @@
 
 "use client";
 
-import { useRef, useState, useCallback } from "react";
-
 interface EmptyStateProps {
   /** Called when a valid .pdf File is chosen by the user */
   onFileSelect: (file: File) => void;
@@ -17,45 +15,7 @@ interface EmptyStateProps {
   isIndexing: boolean;
 }
 
-export default function EmptyState({ onFileSelect, isIndexing }: EmptyStateProps) {
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // ── Drag-and-drop handlers ──────────────────────────────────────────────
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const file = e.dataTransfer.files[0];
-      if (file && (file.type === "application/pdf" || file.type === "application/x-zip-compressed" || file.type === "application/zip" || file.name.endsWith(".zip") || file.name.endsWith(".pdf"))) {
-        onFileSelect(file);
-      }
-    },
-    [onFileSelect]
-  );
-
-  // ── Browse button click ─────────────────────────────────────────────────
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        onFileSelect(file);
-        // Reset input so the same file can be re-uploaded if needed
-        e.target.value = "";
-      }
-    },
-    [onFileSelect]
-  );
-
+export default function EmptyState({ isIndexing }: EmptyStateProps) {
   // ── Indexing animation view ─────────────────────────────────────────────
   if (isIndexing) {
     return (
