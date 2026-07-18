@@ -29,6 +29,26 @@ env_path = Path(__file__).resolve().parent / ".env"
 load_dotenv(dotenv_path=env_path)
 
 
+# ── Helper functions for robust parsing ───────────────────────────────────────
+def _get_int(key: str, default: int) -> int:
+    val = os.getenv(key)
+    if not val:
+        return default
+    try:
+        return int(val.strip())
+    except ValueError:
+        return default
+
+def _get_float(key: str, default: float) -> float:
+    val = os.getenv(key)
+    if not val:
+        return default
+    try:
+        return float(val.strip())
+    except ValueError:
+        return default
+
+
 class Config:
     # ── App Configuration ─────────────────────────────────────────────────────
     APP_NAME    = os.getenv("NEXT_PUBLIC_APP_NAME", "Academic Research Assistant")
@@ -44,60 +64,35 @@ class Config:
 
     # ── LLM Model ─────────────────────────────────────────────────────────────
     LLM_MODEL      = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
-    LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.3"))
+    LLM_TEMPERATURE = _get_float("LLM_TEMPERATURE", 0.3)
 
     # ── Qdrant Collection ─────────────────────────────────────────────────────
     COLLECTION_NAME = os.getenv("COLLECTION_NAME", "academic_rag_demo")
 
     # ── Chunking Parameters ───────────────────────────────────────────────────
-    # Change CHUNK_SIZE to experiment with different granularities:
-    #   300  → very fine-grained, high recall, low precision
-    #   500  → balanced (default)
-    #   700  → moderate context per chunk
-    #   1000 → large chunks, high precision if relevant, low recall
-    CHUNK_SIZE    = int(os.getenv("CHUNK_SIZE", "500"))
-    CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
+    CHUNK_SIZE    = _get_int("CHUNK_SIZE", 500)
+    CHUNK_OVERLAP = _get_int("CHUNK_OVERLAP", 50)
 
     # ── Retrieval Parameters ──────────────────────────────────────────────────
-    # TOP_K: how many chunks to pass to the LLM as context.
-    #   Lower TOP_K → faster, less context noise
-    #   Higher TOP_K → more coverage, more tokens consumed
-    TOP_K = int(os.getenv("TOP_K", "6"))
-
-    # RERANK_TOP_N: initial retrieval pool size for hybrid_rerank mode.
-    # The reranker scores all RERANK_TOP_N candidates and returns TOP_K best.
-    # Must be >= TOP_K. Typical: 20–50.
-    RERANK_TOP_N = int(os.getenv("RERANK_TOP_N", "50"))
+    TOP_K = _get_int("TOP_K", 6)
+    RERANK_TOP_N = _get_int("RERANK_TOP_N", 50)
 
     # ── Retrieval Mode ────────────────────────────────────────────────────────
-    # Controls which retrieval strategy is used at query time.
-    #
-    #   "dense"          → Voyage AI embeddings + Qdrant ANN only
-    #   "hybrid"         → Dense + BM25 fused with Reciprocal Rank Fusion (RRF)
-    #   "hybrid_rerank"  → Hybrid (pool=RERANK_TOP_N) → CrossEncoder reranker → TOP_K
-    #
-    # Change this single variable to switch experiments.
     RETRIEVAL_MODE = os.getenv("RETRIEVAL_MODE", "dense")  # dense | hybrid | hybrid_rerank
 
     # ── Evaluation Mode ───────────────────────────────────────────────────────
-    # When True, every /api/chat call is logged to evaluation/{mode}_log.csv.
-    # Set to "true" in .env before running benchmark queries.
     EVALUATION_MODE = os.getenv("EVALUATION_MODE", "false").lower() == "true"
 
     # ── Embedding Model Config ────────────────────────────────────────────────
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "voyage-3")
-    VECTOR_SIZE     = int(os.getenv("VECTOR_SIZE", "1024"))
+    VECTOR_SIZE     = _get_int("VECTOR_SIZE", 1024)
 
     # ── BM25 Config ───────────────────────────────────────────────────────────
-    # Maximum chunks to scroll from Qdrant for BM25 index construction.
-    # Increase for very large collections; keep low for speed.
-    BM25_CORPUS_LIMIT = int(os.getenv("BM25_CORPUS_LIMIT", "2000"))
+    BM25_CORPUS_LIMIT = _get_int("BM25_CORPUS_LIMIT", 2000)
 
     # ── Ingestion Batch Config ─────────────────────────────────────────────────
-    # Voyage AI free tier: 3 RPM, 10k TPM.
-    # Batch of 15 chunks with 21s sleep respects these limits.
-    INGEST_BATCH_SIZE    = int(os.getenv("INGEST_BATCH_SIZE", "15"))
-    INGEST_BATCH_SLEEP_S = float(os.getenv("INGEST_BATCH_SLEEP_S", "21"))
+    INGEST_BATCH_SIZE    = _get_int("INGEST_BATCH_SIZE", 15)
+    INGEST_BATCH_SLEEP_S = _get_float("INGEST_BATCH_SLEEP_S", 21.0)
 
     @classmethod
     def validate(cls):
