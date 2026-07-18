@@ -48,8 +48,7 @@ def _initialize_engines():
     # 1. Load spaCy (required for claim extraction)
     try:
         import spacy
-        import en_core_web_sm
-        _nlp = en_core_web_sm.load()
+        _nlp = spacy.load("en_core_web_sm")
         logger.info("✅ spaCy (en_core_web_sm) loaded successfully for evaluation.")
     except Exception as e:
         logger.warning(f"⚠️ spaCy loading failed: {e}. Falling back to regex-based splitter.")
@@ -431,9 +430,9 @@ def evaluate_response(
                 emb_q_ans = _voyage_model.embed_documents([query, answer])
                 answer_relevancy = _cosine_similarity(np.array(emb_q_ans[0]), np.array(emb_q_ans[1]))
             except Exception:
-                answer_relevancy = _compute_semantic_similarity(query, answer)
+                answer_relevancy = float(_compute_semantic_matrix([query], [answer])[0, 0])
         else:
-            answer_relevancy = _compute_semantic_similarity(query, answer)
+            answer_relevancy = float(_compute_semantic_matrix([query], [answer])[0, 0])
 
         # Latencies
         total_latency_ms = retrieval_latency_ms + reranking_latency_ms + generation_latency_ms

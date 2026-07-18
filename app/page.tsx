@@ -60,14 +60,10 @@ export default function HomePage() {
       });
 
       if (!res.ok) {
-        let errText = await res.text();
-        try {
-          const errJson = JSON.parse(errText);
-          errText = errJson?.detail || errText;
-        } catch(e) {}
+        const err = await res.json().catch(() => ({}));
         addMessage(sessionId, {
           role:    "assistant",
-          content: `❌ **Query failed (${res.status}):** \n\n\`\`\`text\n${errText}\n\`\`\``,
+          content: `❌ **Query failed (${res.status}):** ${err?.detail ?? res.statusText}`,
         });
         return;
       }

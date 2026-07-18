@@ -60,16 +60,7 @@ export function truncate(text: string, max: number): string {
  * Kept intentionally minimal — no external lib needed.
  */
 export function markdownToHtml(text: string): string {
-  // Escape HTML entities to prevent React rendering crashes from raw HTML injection
-  const escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-  // Basic markdown parsing
-  return escaped
+  return text
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\n/g, "<br />");
 }

@@ -153,12 +153,6 @@ async def upload_document(background_tasks: BackgroundTasks, file: UploadFile = 
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/api/health")
-def health_check():
-    """Simple health check to verify Vercel serverless function boot."""
-    return {"status": "ok", "mode": Config.RETRIEVAL_MODE, "message": "Backend is running!"}
-
-
 @app.post("/api/chat", response_model=ChatResponse)
 @app.post("/api/ask",  response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
